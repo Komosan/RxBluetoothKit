@@ -340,6 +340,12 @@ public class Peripheral {
         for characteristic: Characteristic) -> Observable<Characteristic> {
             let observable = peripheral
                 .rx_didUpdateNotificationStateForCharacteristic
+                .skipWhile({ (type: RxCharacteristicType, error: Error?) -> Bool in
+                    guard let error = error as? NSError, "CBATTErrorDomain" == error.domain, 10 == error.code else {
+                        return false
+                    }
+                    return true
+                })
                 .filter { $0.0 == characteristic.characteristic }
                 .take(1)
                 .flatMap { (_, error) -> Observable<Characteristic> in
