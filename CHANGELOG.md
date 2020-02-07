@@ -1,3 +1,56 @@
+# 5.3.0
+- Always connect to retrieved peripherals first (#337)
+- Addded a customisation point for injecting a logger (#341)
+- Fixed L2CAP API to support OSX 10.14 (#345)
+
+# 5.2.1
+- Updated RxSwift to version 5.0 (#335)
+
+# 5.2.0
+- Added support for Xcode 10.2 and Swift 5 (#321)
+- Fixed "API MISUSE" after canceling notification state when bluetooth is powered off (#319)
+- Fixed problems when `discoverServices` doesn't emit any result (#309)
+
+# 5.1.4
+- Updated RxSwift library to version 4.3
+- fix API MISUSE when calling stop scan on dispose (#283)
+- add option to disable checking of canSendWriteWithoutReponse while writing (#282)
+
+# 5.1.3
+- Changed back deployment target from 10.0 to 8.0. (#275)
+
+# 5.1.2
+- Updated RxSwift to 4.2 with support for XCode 9.4 (#268)
+
+# 5.1.1
+- Fixed `PeripheralManager` not public (#264)
+
+# 5.1.0
+- Added support for `CBPeripheralManager`. Read `PeripheralManager` documentation for more info (#166)
+- Deprecated `RestoredState` and `CentralManager.init(queue:options:onWillRestoreCentralManagerState:)`. From now on please use corresponding `CentralManagerRestoredState` and `CentralManager.init(queue:options:onWillRestoreCentralManagerState:)`
+
+# 5.0.2
+- Changed error name from `BluetoothError.peripheralIsConnectingOrAlreadyConnected` to `BluetoothError.peripheralIsAlreadyObservingConnection` - old error has been deprecated (#245)
+- To each method, that returns observable, added documentation with a list of errors that this observable can return (#225)
+- Rewritten example app that is now using RxBluetoothKit 5.x (#240, #220)
+- Added available annotation for `canSendWriteWithoutResponse` property (#253)
+
+# 5.0.1
+- Added method to observe notyfing state change for the characteristic (#229)
+- Aligned the API for `establishConnection` with the rest of the implementation
+- Made restore state api public (#224)
+- Enabled getting an `Observable<Peripheral>` from already connected peripheral provided by the system (#238)
+- Fixed writting without response on older systems (#241)
+- Added queues for discovery requests (fixed #235)
+- Added support for XCode 9.3 and swift 4.1
+
+# 5.0
+- Changed `BluetoothManager` to `CentralManager`
+- Reimplemented connection and notification API's
+- Added watchOS and tvOS targets
+- Added support for L2CAP
+- Rewritten unit tests
+
 # 4.0.2
 - Allow projects that depend on RxBluetoothKit to update RxSwift to 4.1.0 and newer.
 

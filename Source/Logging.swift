@@ -1,23 +1,23 @@
-//
-//  Logging.swift
-//  RxBluetoothKit
-//
-//  Created by Przemysław Lenart on 23/05/17.
-//  Copyright © 2017 Polidea. All rights reserved.
-//
-
 import Foundation
 import CoreBluetooth
 import RxSwift
 
-/**
- RxBluetoothKit specific logging class which gives access to its settings.
- */
+/// RxBluetoothKit specific logging class which gives access to its settings.
 public class RxBluetoothKitLog: ReactiveCompatible {
 
-    fileprivate static var currentLogLevel: LogLevel = .none
-
     fileprivate static let subject = PublishSubject<String>()
+
+    /// Set new log level.
+    /// - Parameter logLevel: New log level to be applied.
+    public static func setLogLevel(_ logLevel: RxBluetoothKitLog.LogLevel) {
+        RxBluetoothKitLogger.defaultLogger.setLogLevel(logLevel)
+    }
+
+    /// Get current log level.
+    /// - Returns: Currently set log level.
+    public static func getLogLevel() -> RxBluetoothKitLog.LogLevel {
+        return RxBluetoothKitLogger.defaultLogger.getLogLevel()
+    }
 
     private init() {
     }
@@ -38,73 +38,69 @@ public class RxBluetoothKitLog: ReactiveCompatible {
         case error = 4
     }
 
-    /**
-     * Set new log level.
-     * - Parameter logLevel: New log level to be applied.
-     */
-    public static func setLogLevel(_ logLevel: LogLevel) {
-        currentLogLevel = logLevel
-    }
-
-    /**
-     * Get current log level.
-     * - Returns: Currently set log level.
-     */
-    public static func getLogLevel() -> LogLevel {
-        return currentLogLevel
-    }
-
-    fileprivate static func tag(with logLevel: LogLevel) -> String {
-        let prefix: String
-
-        switch logLevel {
-        case .none:
-            prefix = "[RxBLEKit|NONE|"
-        case .verbose:
-            prefix = "[RxBLEKit|VERB|"
-        case .debug:
-            prefix = "[RxBLEKit|DEBG|"
-        case .info:
-            prefix = "[RxBLEKit|INFO|"
-        case .warning:
-            prefix = "[RxBLEKit|WARN|"
-        case .error:
-            prefix = "[RxBLEKit|ERRO|"
-        }
-        let time = Date().timeIntervalSinceReferenceDate
-        return prefix + String(format: "%02.0f:%02.0f:%02.0f.%03.f]:",
-                               floor(time / 3600.0).truncatingRemainder(dividingBy: 24),
-                               floor(time / 60.0).truncatingRemainder(dividingBy: 60),
-                               floor(time).truncatingRemainder(dividingBy: 60),
-                               floor(time * 1000).truncatingRemainder(dividingBy: 1000))
-    }
-
-    fileprivate static func log(with logLevel: LogLevel, message: @autoclosure () -> String) {
-        if currentLogLevel <= logLevel {
-            let string = "\(tag(with: logLevel)) \(message())"
-            subject.onNext(string)
-            print(string)
+    fileprivate static func log(
+        with logLevel: LogLevel,
+        message: @autoclosure () -> String,
+        file: StaticString,
+        function: StaticString,
+        line: UInt
+    ) {
+        let loggedMessage = message()
+        RxBluetoothKitLogger.defaultLogger.log(
+            loggedMessage,
+            level: logLevel,
+            file: file,
+            function: function,
+            line: line
+        )
+        if getLogLevel() <= logLevel {
+            subject.onNext(loggedMessage)
         }
     }
 
-    static func v(_ message: @autoclosure () -> String) {
-        log(with: .verbose, message: message)
+    static func v(
+        _ message: @autoclosure () -> String,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: UInt = #line
+    ) {
+        log(with: .verbose, message: message(), file: file, function: function, line: line)
     }
 
-    static func d(_ message: @autoclosure () -> String) {
-        log(with: .debug, message: message)
+    static func d(
+        _ message: @autoclosure () -> String,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: UInt = #line
+    ) {
+        log(with: .debug, message: message(), file: file, function: function, line: line)
     }
 
-    static func i(_ message: @autoclosure () -> String) {
-        log(with: .info, message: message)
+    static func i(
+        _ message: @autoclosure () -> String,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: UInt = #line
+    ) {
+        log(with: .info, message: message(), file: file, function: function, line: line)
     }
 
-    static func w(_ message: @autoclosure () -> String) {
-        log(with: .warning, message: message)
+    static func w(
+        _ message: @autoclosure () -> String,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: UInt = #line
+    ) {
+        log(with: .warning, message: message(), file: file, function: function, line: line)
     }
 
-    static func e(_ message: @autoclosure () -> String) {
-        log(with: .error, message: message)
+    static func e(
+        _ message: @autoclosure () -> String,
+        file: StaticString = #file,
+        function: StaticString = #function,
+        line: UInt = #line
+    ) {
+        log(with: .error, message: message(), file: file, function: function, line: line)
     }
 }
 
@@ -158,6 +154,8 @@ extension CBCharacteristicWriteType: Loggable {
         switch self {
         case .withResponse: return "withResponse"
         case .withoutResponse: return "withoutResponse"
+        @unknown default:
+            return "unknown write type"
         }
     }
 }
@@ -182,7 +180,7 @@ extension CBCentralManager: Loggable {
 
 extension CBPeripheral: Loggable {
     @objc var logDescription: String {
-        return "Peripheral(uuid: \(value(forKey: "identifier") as! NSUUID as UUID), name: \(String(describing: name)))"
+        return "Peripheral(uuid: \(uuidIdentifier), name: \(String(describing: name)))"
     }
 }
 
@@ -201,6 +199,31 @@ extension CBService: Loggable {
 extension CBDescriptor: Loggable {
     @objc var logDescription: String {
         return "Descriptor(uuid: \(uuid), id: \((UInt(bitPattern: ObjectIdentifier(self)))))"
+    }
+}
+
+extension CBPeripheralManager: Loggable {
+    @objc var logDescription: String {
+        return "PeripheralManager(\(UInt(bitPattern: ObjectIdentifier(self))))"
+    }
+}
+
+extension CBATTRequest: Loggable {
+    @objc var logDescription: String {
+        return "ATTRequest(\(UInt(bitPattern: ObjectIdentifier(self)))"
+    }
+}
+
+extension CBCentral: Loggable {
+    @objc var logDescription: String {
+        return "CBCentral(uuid: \(uuidIdentifier))"
+    }
+}
+
+@available(iOS 11.0, macOS 10.13, tvOS 11.0, watchOS 4.0, *)
+extension CBL2CAPChannel: Loggable {
+    @objc var logDescription: String {
+        return "CBL2CAPChannel(\(UInt(bitPattern: ObjectIdentifier(self)))"
     }
 }
 
